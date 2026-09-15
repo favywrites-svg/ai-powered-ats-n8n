@@ -1,0 +1,636 @@
+{
+  "name": "ATS workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -1200,
+        -64
+      ],
+      "id": "803efb65-4e76-4669-a2b0-6ca5f4c40164",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "feb8b893-4850-4a5f-ad2e-3c14a38e98ef",
+              "name": "candidate_name",
+              "value": "={{ $('Google Sheets Trigger').item.json.Name }}",
+              "type": "string"
+            },
+            {
+              "id": "3137c69c-22cd-47e3-90f2-34a683193b3d",
+              "name": "candidate_email",
+              "value": "={{ $('Google Sheets Trigger').item.json.Email }}",
+              "type": "string"
+            },
+            {
+              "id": "20ce23a7-5021-40dd-9187-c97a0a72ca0e",
+              "name": "Position",
+              "value": "={{ $('Google Sheets Trigger').item.json['Position Applying For '] }}",
+              "type": "string"
+            },
+            {
+              "id": "3386c28d-9786-4f04-8fd0-7691c00d6f8a",
+              "name": "resume_text",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -976,
+        -64
+      ],
+      "id": "52f97ab6-b68c-4870-849d-d99757a4fa3f",
+      "name": "Candidate details"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "03b93e46-0f34-4d74-b71c-a90b149c9bcc",
+              "name": "job_description",
+              "value": "=We are looking for an AI Automation Specialist to design and build automated workflows that improve business processes and reduce repetitive manual tasks. The ideal candidate should have experience with workflow automation, n8n, API integrations, webhooks, data processing, and AI-powered automation. Experience working with JavaScript, JSON, and AI/LLM platforms is preferred. The candidate should be able to understand business processes, identify automation opportunities, and build reliable workflows that connect different business tools.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -752,
+        -64
+      ],
+      "id": "24e7deb9-bf8a-41b8-915b-5c3743708b14",
+      "name": "Job Description"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI-powered candidate screening assistant designed to support recruiters during the initial review of job applications.\n\nYour task is to evaluate a candidate's CV against the requirements of the specific position they applied for.\n\nCANDIDATE INFORMATION\n\nName:\n{{ $('Candidate details').item.json.candidate_name }}\n\nPosition Applied For:\n{{ $('Candidate details').item.json.Position }}\n\nCV:\n{{ $('Candidate details').item.json.resume_text }}\n\nJOB DESCRIPTION\n\n{{ $json.job_description }}\n\nSCREENING INSTRUCTIONS\n\n1. Compare the candidate's qualifications, skills, experience, education, and relevant work history against the job description.\n\n2. Assess how closely the candidate matches the requirements of the role.\n\n3. Identify the candidate's strongest relevant qualifications.\n\n4. Identify important requirements from the job description that are missing or not clearly demonstrated in the CV.\n\n5. Assign an overall match score from 0 to 100.\n\n6. Provide a recommendation:\n- \"Interview\" for a strong match\n- \"Review\" for a moderate or uncertain match\n- \"Reject\" for a poor match\n\n7. Base your assessment only on information provided in the CV and job description. Do not invent qualifications or experience.\n\n8. Do not consider age, gender, race, religion, marital status, photograph, or other personal characteristics that are unrelated to the candidate's ability to perform the job.\n\nReturn the assessment in the required structured format.",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -528,
+        -64
+      ],
+      "id": "66a78055-7250-4cc5-bd31-2dbda83626be",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -512,
+        160
+      ],
+      "id": "86183309-98fc-41b6-8370-c1af20819f81",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "U1ukZIn2oYUNErwy",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"match_score\": 82,\n  \"recommendation\": \"Interview\",\n  \"strengths\": [\n    \"Experience with n8n and workflow automation\",\n    \"Relevant API integration experience\"\n  ],\n  \"missing_requirements\": [\n    \"No clear evidence of Python experience\"\n  ],\n  \"summary\": \"The candidate demonstrates a strong match for the role based on their automation experience and technical skills.\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -384,
+        160
+      ],
+      "id": "7a032b63-b9fc-48f0-a4c1-677006bec375",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1WGGqeP0Il44bqaz1QEp5c_KhpqV_O6mvp7VImy-2CWU",
+          "mode": "list",
+          "cachedResultName": "J & J AUTOMATION AGENCY (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WGGqeP0Il44bqaz1QEp5c_KhpqV_O6mvp7VImy-2CWU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1310290601,
+          "mode": "list",
+          "cachedResultName": "Form Responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WGGqeP0Il44bqaz1QEp5c_KhpqV_O6mvp7VImy-2CWU/edit#gid=1310290601"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1648,
+        -64
+      ],
+      "id": "e414bb2a-b223-44b4-88b0-1e3695207bec",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "7cuIDUrV7WSqbKPh",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json[\"Upload Your CV\"].split(\"id=\")[1] }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -1424,
+        -64
+      ],
+      "id": "4105d735-938d-4a99-a30e-786d651cc118",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "38Eg9lElRNyZKThi",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.recommendation }}",
+                    "rightValue": "Interview",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "91e9407c-f2ea-424a-8a54-dc3ee8206b97"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "e0365fe1-e3b2-4189-ab90-734b5755bc24",
+                    "leftValue": "={{ $json.output.recommendation }}",
+                    "rightValue": "Review",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "00a8dbc7-64bd-482c-9881-b47d5574af9e",
+                    "leftValue": "={{ $json.output.recommendation }}",
+                    "rightValue": "Reject",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -176,
+        -192
+      ],
+      "id": "d464641a-e4df-4554-8791-aee53e27468c",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Candidate details').item.json.candidate_email }}",
+        "subject": "=Interview Invitation - {{ $('Candidate details').item.json.Position }}\n\n",
+        "message": "=Dear,{{ $('Candidate details').item.json.candidate_name }}\n\nThank you for applying for the {{ $('Candidate details').item.json.Position }} position.\n\nWe are pleased to let you know that you have been selected for an interview.\n\nInterview Details:\nDate: Thursday, 17 September 2026\nTime: 8:00 AM\nFormat: Online\n\nThe interview will be conducted remotely.\nA meeting link and any additional instructions will be shared with you before the interview.\n\nWe look forward to speaking with you.\n\nBest regards,\nThe HR\nJ & J Automation Agency",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        48,
+        -272
+      ],
+      "id": "82471371-544b-4a62-90c9-eb15ea613d65",
+      "name": "Successful Candidate",
+      "webhookId": "0c4d8d28-a572-4b03-9407-4ee0bf282f8b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "pa35CcXIYTgM9Yyt",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1WGGqeP0Il44bqaz1QEp5c_KhpqV_O6mvp7VImy-2CWU",
+          "mode": "list",
+          "cachedResultName": "J & J AUTOMATION AGENCY (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WGGqeP0Il44bqaz1QEp5c_KhpqV_O6mvp7VImy-2CWU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1310290601,
+          "mode": "list",
+          "cachedResultName": "Form Responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WGGqeP0Il44bqaz1QEp5c_KhpqV_O6mvp7VImy-2CWU/edit#gid=1310290601"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "={{ $json.output.recommendation }}",
+            "Email Address": "={{ $('Candidate details').item.json.candidate_email }}",
+            "Name": "={{ $('Candidate details').item.json.candidate_name }}",
+            "Email": "={{ $('Candidate details').item.json.candidate_email }}",
+            "Phone Number": "={{ $('Download file').item.json['Phone Number'] }}",
+            "Position Applying For ": "={{ $('Download file').item.json['Position Applying For '] }}",
+            "Years of Relevant Experience ": "={{ $('Download file').item.json['Years of Relevant Experience '] }}",
+            "  LinkedIn Profile  ": "={{ $('Download file').item.json['  LinkedIn Profile  '] }}",
+            "Upload Your CV": "={{ $('Download file').item.json['Upload Your CV'] }}",
+            "Timestamp": "={{ $('Google Sheets Trigger').item.json.Timestamp }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email Address",
+              "displayName": "Email Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Position Applying For ",
+              "displayName": "Position Applying For ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Years of Relevant Experience ",
+              "displayName": "Years of Relevant Experience ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "  LinkedIn Profile  ",
+              "displayName": "  LinkedIn Profile  ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "  Portfolio / Website URL  ",
+              "displayName": "  Portfolio / Website URL  ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Upload Your CV",
+              "displayName": "Upload Your CV",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -176,
+        32
+      ],
+      "id": "a862d54f-1290-44bb-98e7-2fc4604fd8c1",
+      "name": "Update Status (interview/Review/Reject)",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "iU1Xeh9G5awrGyOc",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Candidate details').item.json.candidate_email }}",
+        "subject": "=Application Update - {{ $('Candidate details').item.json.Position }}",
+        "message": "=Dear,{{ $('Candidate details').item.json.candidate_name }}\n\nThank you for your interest in the {{ $('Candidate details').item.json.Position }} position and for taking the time to submit your application.\n\nAfter careful consideration, we have decided not to proceed with your application at this time.\n\nWe appreciate your interest in the opportunity and wish you all the best in your future endeavors.\n\nBest regards,\nRecruitment Team",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        48,
+        -80
+      ],
+      "id": "25d1c2d9-00c4-4df7-9f17-43c967256b64",
+      "name": "Send a message",
+      "webhookId": "4285b243-4fd3-48b0-923b-7a569dc661ae",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "pa35CcXIYTgM9Yyt",
+          "name": "Gmail account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Google Sheets Trigger": [
+      {
+        "json": {
+          "Timestamp": "9/15/2026 13:47:30",
+          "Email Address": "favy.writes@gmail.com",
+          "Name": "Efe Enabulele",
+          "Email": "favy.writes@gmail.com ",
+          "Phone Number": "09153527696",
+          "Position Applying For ": "Ai Automation Specialist",
+          "Years of Relevant Experience ": "1-2 years",
+          "  LinkedIn Profile  ": "https://www.linkedin.com/in/efe-enabulele-6ba6961a9/",
+          "  Portfolio / Website URL  ": "",
+          "Upload Your CV": "https://drive.google.com/open?id=11X146kG3aj6HsNc5XIiF4YmnPxn3nIud"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Candidate details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Candidate details": {
+      "main": [
+        [
+          {
+            "node": "Job Description",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Job Description": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Status (interview/Review/Reject)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Successful Candidate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Status (interview/Review/Reject)": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "aa12ad7e-b2c1-43b3-9009-112e2549e945",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8ef9fc083bced612473d95cc5d9e17283239e0f11601830ba5519975a10d63c0"
+  },
+  "nodeGroups": [],
+  "id": "gn9CqkkBYaqCIIHY",
+  "tags": []
+}
